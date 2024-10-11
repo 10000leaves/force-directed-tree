@@ -1,7 +1,7 @@
 export interface NodeDataItem {
-  betweennessCentralityValue: number;
+  betweennessCentralityValue?: number;
   community: string;
-  frequencyValue: number;
+  frequencyValue?: number;
   link: string[];
   linkData?: { [key: string]: number };
   linkWidths?: { [key: string]: number };
@@ -11,7 +11,7 @@ export interface NodeDataItem {
 
 export const initialData: NodeDataItem[] = [
   {
-    "frequencyValue": 0.16,
+    "betweennessCentralityValue": 0.16,
     "community": "4",
     "frequencyValue": 153,
     "link": [
