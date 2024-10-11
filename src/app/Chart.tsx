@@ -18,14 +18,15 @@ function Chart() {
   const [chartWidth, setChartWidth] = useState(800);
   const [chartHeight, setChartHeight] = useState(600);
   const chartRef = useRef<am4plugins_forceDirected.ForceDirectedTree | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     if (chartRef.current) {
       chartRef.current.dispose();
     }
 
-    let chart = am4core.create("chartdiv", am4plugins_forceDirected.ForceDirectedTree);
-    let series = chart.series.push(new am4plugins_forceDirected.ForceDirectedSeries());
+    const chart = am4core.create("chartdiv", am4plugins_forceDirected.ForceDirectedTree);
+    const series = chart.series.push(new am4plugins_forceDirected.ForceDirectedSeries());
 
     series.data = chartData;
 
@@ -90,8 +91,10 @@ function Chart() {
     try {
       const newData = JSON.parse(jsonData);
       setChartData(newData);
+      setErrorMessage(null); // エラーがない場合、エラーメッセージをクリア
     } catch (error) {
       console.error("Invalid JSON data", error);
+      setErrorMessage("Invalid JSON data: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -99,6 +102,12 @@ function Chart() {
     <div className="flex">
       <div className="w-2/3 p-6">
         <h2 className="text-2xl font-bold mb-4">Chart</h2>
+        {errorMessage && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong className="font-bold">Error:</strong>
+            <span className="block sm:inline"> {errorMessage}</span>
+          </div>
+        )}
         <div id="chartdiv" style={{ width: `${chartWidth}px`, height: `${chartHeight}px` }}/>
       </div>
       <div className="w-1/3 p-6">
