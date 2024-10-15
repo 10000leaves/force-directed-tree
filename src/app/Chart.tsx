@@ -19,7 +19,7 @@ function Chart() {
   const [linkWithStrength, setLinkWithStrength] = useState(1.5);
   const [chartData, setChartData] = useState<NodeDataItem[]>(initialData);
   const [radioValue, setRadioValue] = useState("betweennessCentralityValue");
-  const [chartWidth, setChartWidth] = useState(800);
+  const [chartWidth, setChartWidth] = useState(1000);
   const [chartHeight, setChartHeight] = useState(600);
   const [communityColors, setCommunityColors] = useState<CommunityColor>({});
   const [tempCommunityColors, setTempCommunityColors] = useState<CommunityColor>({});
@@ -109,12 +109,23 @@ function Chart() {
     series.manyBodyStrength = manyBodyStrength;
     series.links.template.strength = linkWithStrength;
 
+    // エクスポート機能を追加
+    chart.exporting.menu = new am4core.ExportMenu();
+    chart.exporting.menu.align = "right";
+    chart.exporting.menu.verticalAlign = "top";
+
     chartRef.current = chart;
 
     return () => {
       chart.dispose();
     };
   }, [chartData, centerStrength, manyBodyStrength, linkWithStrength, radioValue, chartWidth, chartHeight, communityColors]);
+
+  const handleDownload = () => {
+    if (chartRef.current) {
+      chartRef.current.exporting.export("png");
+    }
+  };
 
   const handleApply = () => {
     try {
@@ -140,8 +151,8 @@ function Chart() {
   });
 
   return (
-    <div className="flex">
-      <div className="w-2/3 p-6">
+    <div className="flex flex-col lg:flex-row">
+      <div className="w-full lg:w-2/3 p-6">
         <h2 className="text-2xl font-bold mb-4">Chart</h2>
         {errorMessage && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -149,12 +160,18 @@ function Chart() {
             <span className="block sm:inline"> {errorMessage}</span>
           </div>
         )}
-        <div id="chartdiv" style={{ width: `${chartWidth}px`, height: `${chartHeight}px` }}/>
+        <div id="chartdiv" style={{ width: `${chartWidth}px`, height: `${chartHeight}px` }} className="border border-blue-600"/>
+        <button
+          onClick={handleDownload}
+          className="mt-4 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+        >
+          画像をダウンロード
+        </button>
       </div>
-      <div className="w-1/3 p-6">
+      <div className="w-full lg:w-1/3 p-6">
         <h2 className="text-2xl font-bold mb-4">Settings</h2>
         <div className="space-y-4">
-        <div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">JSON Data</label>
             <textarea
               value={jsonData}
