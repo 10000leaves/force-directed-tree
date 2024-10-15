@@ -8,6 +8,10 @@ import { initialData, NodeDataItem } from './initialData';
 
 am4core.useTheme(am4themes_animated);
 
+interface CommunityColor {
+  [key: string]: string;
+}
+
 function Chart() {
   const [jsonData, setJsonData] = useState(JSON.stringify(initialData, null, 2));
   const [centerStrength, setCenterStrength] = useState(1.7);
@@ -17,6 +21,8 @@ function Chart() {
   const [radioValue, setRadioValue] = useState("betweennessCentralityValue");
   const [chartWidth, setChartWidth] = useState(800);
   const [chartHeight, setChartHeight] = useState(600);
+  const [communityColors, setCommunityColors] = useState<CommunityColor>({});
+  const [tempCommunityColors, setTempCommunityColors] = useState<CommunityColor>({});
   const chartRef = useRef<am4plugins_forceDirected.ForceDirectedTree | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -44,6 +50,29 @@ function Chart() {
     series.fontSize = 15;
     series.minRadius = 15;
     series.maxRadius = 45;
+
+    // コミュニティごとの色設定
+    series.nodes.template.adapter.add("fill", (fill, target) => {
+      const dataContext = target.dataItem?.dataContext as NodeDataItem;
+      if (dataContext && dataContext.community) {
+        const communityColor = communityColors[dataContext.community];
+        if (communityColor) {
+          return am4core.color(communityColor);
+        }
+      }
+      return fill;
+    });
+
+    series.nodes.template.adapter.add("stroke", (stroke, target) => {
+      const dataContext = target.dataItem?.dataContext as NodeDataItem;
+      if (dataContext && dataContext.community) {
+        const communityColor = communityColors[dataContext.community];
+        if (communityColor) {
+          return am4core.color(communityColor);
+        }
+      }
+      return stroke;
+    });
 
     series.links.template.strokeWidth = 2;
     series.links.template.strokeOpacity = 1;
@@ -85,18 +114,30 @@ function Chart() {
     return () => {
       chart.dispose();
     };
-  }, [chartData, centerStrength, manyBodyStrength, linkWithStrength, radioValue, chartWidth, chartHeight]);
+  }, [chartData, centerStrength, manyBodyStrength, linkWithStrength, radioValue, chartWidth, chartHeight, communityColors]);
 
   const handleApply = () => {
     try {
       const newData = JSON.parse(jsonData);
       setChartData(newData);
-      setErrorMessage(null); // エラーがない場合、エラーメッセージをクリア
+      setCommunityColors(tempCommunityColors);
+      setErrorMessage(null);
     } catch (error) {
       console.error("Invalid JSON data", error);
       setErrorMessage("Invalid JSON data: " + (error instanceof Error ? error.message : String(error)));
     }
   };
+
+  const handleColorChange = (community: string, color: string) => {
+    setTempCommunityColors(prevColors => ({
+      ...prevColors,
+      [community]: color
+    }));
+  };
+
+  const communities = Array.from(new Set(chartData.map(item => item.community))).sort((a, b) => {
+    return parseInt(a) - parseInt(b);
+  });
 
   return (
     <div className="flex">
@@ -113,7 +154,7 @@ function Chart() {
       <div className="w-1/3 p-6">
         <h2 className="text-2xl font-bold mb-4">Settings</h2>
         <div className="space-y-4">
-          <div>
+        <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">JSON Data</label>
             <textarea
               value={jsonData}
@@ -122,6 +163,20 @@ function Chart() {
               className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500"
               placeholder="JSON dataを入力してください"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">コミュニティの色※デフォルトはランダム</label>
+            {communities.map(community => (
+              <div key={community} className="flex items-center mb-2">
+                <label className="mr-2 text-sm font-medium text-gray-700">コミュニティ {community}:</label>
+                <input
+                  type="color"
+                  value={tempCommunityColors[community] || '#000000'}
+                  onChange={(e) => handleColorChange(community, e.target.value)}
+                  className="w-8 h-8"
+                />
+              </div>
+            ))}
           </div>
           <button
             onClick={handleApply}
